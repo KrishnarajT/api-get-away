@@ -1,0 +1,48 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  bff:
+    build:
+      context: .
+      dockerfile: build/docker/Dockerfile
+      target: dev
+    env_file:
+      - .env
+    environment:
+      - BFF_CONFIG=/app/configs/config.yaml
+      - REDIS_ADDR=redis:6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    # Compose watch: sync & rebuild rules
+    develop:
+      watch:
+        - action: sync
+          path: ./cmd
+          target: /app/cmd
+        - action: sync
+          path: ./internal
+          target: /app/internal
+        - action: sync
+          path: ./configs
+          target: /app/configs
+        - action: sync
+          path: ./go.mod
+          target: /app/go.mod
+        - action: sync
+          path: ./go.sum
+          target: /app/go.sum
+        - action: rebuild
+          path: ./build/docker/Dockerfile
+
+volumes:
+  redis_data:

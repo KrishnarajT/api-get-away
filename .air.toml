@@ -1,0 +1,14 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/bff ./cmd/bff"
+bin = "./tmp/bff"
+full_bin = ""
+include_ext = ["go"]
+exclude_dir = ["tmp", "vendor", ".git"]
+exclude_regex = ["_test.go"]
+delay = 200
+
+[log]
+time = true
