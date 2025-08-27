@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>BFF Demo UI</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<script src="/app.js" defer></script>
+
+		<style>
+			:root {
+				font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+					Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+			}
+			body {
+				margin: 0;
+				background: #0b1220;
+				color: #e6edf3;
+			}
+			header {
+				display: flex;
+				gap: 12px;
+				align-items: center;
+				padding: 14px 18px;
+				border-bottom: 1px solid #1e2a44;
+			}
+			main {
+				max-width: 900px;
+				margin: 24px auto;
+				padding: 0 18px;
+				display: grid;
+				gap: 18px;
+			}
+			button {
+				padding: 8px 12px;
+				background: #2b3a67;
+				color: #fff;
+				border: 1px solid #3a4a7a;
+				border-radius: 8px;
+				cursor: pointer;
+			}
+			button:hover {
+				filter: brightness(1.15);
+			}
+			.row {
+				display: flex;
+				gap: 10px;
+				align-items: center;
+				flex-wrap: wrap;
+			}
+			.card {
+				background: #0f192e;
+				border: 1px solid #1e2a44;
+				border-radius: 12px;
+				padding: 14px;
+			}
+			pre {
+				margin: 0;
+				white-space: pre-wrap;
+				word-break: break-word;
+			}
+			.muted {
+				color: #9fb2c8;
+			}
+			.ok {
+				color: #9ae6b4;
+			}
+			.bad {
+				color: #feb2b2;
+			}
+			.pill {
+				font-size: 12px;
+				padding: 2px 8px;
+				border: 1px solid #2a3a66;
+				border-radius: 999px;
+			}
+			img.avatar {
+				width: 36px;
+				height: 36px;
+				border-radius: 50%;
+				border: 1px solid #2a3a66;
+				object-fit: cover;
+				background: #1a2541;
+			}
+			a {
+				color: #8ab4ff;
+				text-decoration: none;
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<strong>AU-thentic (BFF Demo)</strong>
+			<span id="status" class="pill muted">checking…</span>
+			<div class="row" style="margin-left: auto">
+				<img id="avatar" class="avatar" alt="" />
+				<span id="welcome" class="muted"></span>
+				<button id="loginBtn">Login</button>
+				<button id="logoutBtn">Logout</button>
+				<!-- keep your existing <script src="/app.js" defer></script> before </body> -->
+			</div>
+		</header>
+
+		<main>
+			<div class="card">
+				<div class="row">
+					<button id="refreshMeBtn">Refresh /api/me</button>
+					<span class="muted"
+						>Shows the current user (from BFF → Authentik userinfo)</span
+					>
+				</div>
+				<pre id="meBox" class="muted">No data yet.</pre>
+			</div>
+
+			<div class="card">
+				<div class="row">
+					<button id="portfolioBtn">Load /api/portfolio</button>
+					<span class="muted">Calls your protected API through the BFF proxy</span>
+				</div>
+				<pre id="portfolioBox" class="muted">No data yet.</pre>
+			</div>
+
+			<div class="card">
+				<div class="row">
+					<button id="healthBtn">Ping /healthz</button>
+					<span class="muted">Quick readiness check</span>
+				</div>
+				<pre id="healthBox" class="muted">No data yet.</pre>
+			</div>
+		</main>
+	</body>
+</html>
