@@ -29,7 +29,6 @@ export async function createSession(tokenSet, userInfo = null) {
 	const now = Math.floor(Date.now() / 1000);
 	const normalized = normalizeTokenSet(tokenSet, now);
 	if (userInfo) normalized.user = userInfo;
-	console.log("createSession storing:", { sid, normalized });
 	await redis.setex(`session:${sid}`, ttl.session, JSON.stringify(normalized));
 	return sid;
 }
