@@ -49,15 +49,23 @@ r.get(config.oidc.redirectPath.replace(/^\/auth/, ""), async (req, res, next) =>
 
 		const tokenSet = await exchangeCodeForTokens({ code, codeVerifier: record.codeVerifier });
 
-		// Verify ID token & nonce when available
-		if (tokenSet.id_token) {
-			await verifyIdToken(tokenSet.id_token, { expectedNonce: record.nonce });
-		}
+		var idPayload = null;		// Verify ID token & nonce when available
 
+		if (tokenSet.id_token) {
+			idPayload = await verifyIdToken(tokenSet.id_token, { expectedNonce: record.nonce });
+			// build a small user object
+		}
+		const userInfo = {
+			email: idPayload.email || idPayload.preferred_username || null,
+			sub: idPayload.sub,
+			name: idPayload.name || null
+		};
 		const sid = await createSession({
 			...tokenSet,
 			created_at: Date.now(),
-		});
+		}, userInfo);
+		console.log("SESSION CREATED:", { sid, userSnapshot: { email: userInfo.email, sub: userInfo.sub, name: userInfo.name } });
+
 		setSessionCookie(res, sid);
 		res.redirect("/");
 	} catch (err) {

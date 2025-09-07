@@ -66,7 +66,7 @@ async function fetchMe() {
 async function fetchPortfolio() {
 	portfolioBox.textContent = "Loading…";
 	try {
-		const resp = await fetch(`${BASE}/api/portfolio`, { credentials: "include" });
+		const resp = await fetch(`${BASE}/api/auth_check`, { credentials: "include" });
 		if (!resp.ok) {
 			const body = await jsonOrNull(resp);
 			portfolioBox.textContent = `Error ${resp.status} ${body ? JSON.stringify(body) : ""}`;

@@ -23,11 +23,13 @@ export async function getAndDeleteState(state) {
 	return val ? JSON.parse(val) : null;
 }
 
-export async function createSession(tokenSet) {
+export async function createSession(tokenSet, userInfo = null) {
 	const sid = randStr(24);
 	// Normalize a few fields we’ll depend on
 	const now = Math.floor(Date.now() / 1000);
 	const normalized = normalizeTokenSet(tokenSet, now);
+	if (userInfo) normalized.user = userInfo;
+	console.log("createSession storing:", { sid, normalized });
 	await redis.setex(`session:${sid}`, ttl.session, JSON.stringify(normalized));
 	return sid;
 }
@@ -35,6 +37,7 @@ export async function createSession(tokenSet) {
 export async function getSession(sid) {
 	if (!sid) return null;
 	const val = await redis.get(`session:${sid}`);
+	console.log("getSession lookup for sid:", sid);
 	return val ? JSON.parse(val) : null;
 }
 
