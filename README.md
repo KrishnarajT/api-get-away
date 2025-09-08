@@ -2,6 +2,8 @@
 
 This project is a Backend-for-Frontend (BFF) application built using Node.js and Express. It serves as an intermediary between the frontend and various backend services, handling authentication, session management, and API requests.
 
+# ![](flow_diagram.jpg)
+
 ## Project Structure
 
 - **src/**: Contains the source code for the application.
