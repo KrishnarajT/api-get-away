@@ -8,5 +8,5 @@ COPY src ./src
 COPY .env.example ./ # not used at runtime; for reference
 
 ENV NODE_ENV=production
-EXPOSE 8080
+EXPOSE 5000
 CMD ["node", "src/server.js"]
