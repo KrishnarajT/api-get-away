@@ -46,8 +46,6 @@ const config = {
 	},
 
 	refreshSkewSeconds: num("TOKEN_REFRESH_SKEW_SECONDS", 60),
-
-	upstreamApiBaseUrl: must("UPSTREAM_API_BASE_URL"),
 	allowedOrigins: parseList(process.env.ALLOWED_ORIGINS || ""),
 };
 
