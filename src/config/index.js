@@ -47,7 +47,6 @@ const config = {
 
 	refreshSkewSeconds: num("TOKEN_REFRESH_SKEW_SECONDS", 60),
 	allowedOrigins: parseList(process.env.ALLOWED_ORIGINS || ""),
-	domain: process.env.APP_DOMAIN || undefined,
 };
 
 export default config;
