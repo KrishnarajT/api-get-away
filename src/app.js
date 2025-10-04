@@ -63,7 +63,7 @@ app.use(cors({
 }));
 
 // ensure preflight responds quickly
-app.options("*", (req, res) => res.sendStatus(204));
+// app.options("*", (req, res) => res.sendStatus(204));
 // routes
 app.use("/auth", authRoutes);
 app.use("/api", apiRoutes);
