@@ -3,4 +3,8 @@ npm-debug.log
 Dockerfile
 .dockerignore
 .env
+.env.example
 .git
+.vscode
+.idea
+redis_data
