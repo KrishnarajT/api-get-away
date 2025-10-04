@@ -27,7 +27,7 @@ const config = {
 		name: process.env.SESSION_COOKIE_NAME || "sid",
 		domain: process.env.SESSION_COOKIE_DOMAIN || undefined,
 		secure: bool("SESSION_COOKIE_SECURE", true),
-		sameSite: process.env.SESSION_COOKIE_SAMESITE || "Lax",
+		sameSite: process.env.SESSION_COOKIE_SAMESITE || "none",
 	},
 
 	redisUrl: must("REDIS_URL"),
