@@ -16,14 +16,45 @@ import {
 
 const r = Router();
 
-function setSessionCookie(res, sid) {
+function normalizeCookieDomain(value) {
+	if (!value) return undefined;
+	// If someone accidentally set an object, bail out
+	if (typeof value !== "string") return undefined;
+	let v = value.trim();
+	if (!v) return undefined;
+
+	// Remove scheme if present: https://example.com -> example.com
+	v = v.replace(/^https?:\/\//i, "");
+
+	// Remove path if present: example.com/foo -> example.com
+	v = v.split("/")[0];
+
+	// Remove port if present: example.com:3000 -> example.com
+	v = v.split(":")[0];
+
+	// final sanity: only allow characters expected in hostnames (letters, digits, ., -)
+	if (!/^[A-Za-z0-9.-]+$/.test(v)) return undefined;
+
+	// Optionally make cookie available to subdomains:
+	// return v.startsWith('.') ? v : `.${v}`;
+	return v;
+}
+
+// Replace your function with this
+function setSessionCookie(res, sid, req) {
+	const cookieDomain = normalizeCookieDomain(config.cookie.domain || req?.headers?.host);
+	// debug log — remove in production
+	console.log("setSessionCookie -> cookieDomain:", cookieDomain);
+
 	const opts = {
 		httpOnly: true,
-		secure: config.cookie.secure,
+		secure: Boolean(config.cookie.secure),
 		sameSite: config.cookie.sameSite,
 		path: "/",
 	};
-	if (config.cookie.domain) opts.domain = config.cookie.domain;
+
+	if (cookieDomain) opts.domain = cookieDomain;
+
 	res.cookie(config.cookie.name, sid, opts);
 }
 
@@ -98,7 +129,7 @@ r.post("/logout", async (req, res) => {
 		secure: config.cookie.secure,
 		sameSite: config.cookie.sameSite,
 		path: "/",
-		domain: config.cookie.domain || undefined,
+		domain: normalizeCookieDomain(config.cookie.domain || req?.headers?.host),
 	});
 
 	res.status(204).end();
