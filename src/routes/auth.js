@@ -47,6 +47,7 @@ function setSessionCookie(res, sid, req) {
 	console.log("setSessionCookie -> cookieDomain:", cookieDomain);
 
 	const opts = {
+		domain: cookieDomain,
 		httpOnly: true,
 		secure: Boolean(config.cookie.secure),
 		sameSite: config.cookie.sameSite,
