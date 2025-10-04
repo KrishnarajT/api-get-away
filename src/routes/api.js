@@ -33,6 +33,8 @@ r.get("/me", requireAuth, async (req, res) => {
 r.use("/", async (req, res, next) => {
   try {
     const cookieName = config?.cookie?.name ?? "sid";
+    console.log(">>> PRE-PROXY MIDDLEWARE: checking for session cookie:", cookieName);
+    console.log("all cookies:", req.cookies);
     const sid = req.cookies?.[cookieName] ?? null;
 
     console.log(">>> PRE-PROXY REQUEST:", { method: req.method, url: req.originalUrl, sid });
