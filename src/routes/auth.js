@@ -57,41 +57,68 @@ function setSessionCookie(res, sid, req) {
 
 	res.cookie(config.cookie.name, sid, opts);
 }
-// Build allowed frontend hosts from config mappings and explicit config
-function makeAllowedFrontendHosts() {
+
+import fs from "fs";
+import path from "path";
+import yaml from "js-yaml";
+
+const cfgPath = path.resolve(process.cwd(), "config.yml");
+
+let cfg = { defaultBackend: undefined, mappings: [] };
+try {
+  const raw = fs.readFileSync(cfgPath, "utf8");
+  cfg = { ...cfg, ...yaml.load(raw) };
+  console.log("Loaded proxy config:", cfg);
+} catch (err) {
+  console.error("Failed to load config.yml:", err);
+}
+
+// Normalize mapping entries for fast lookup
+// keep as array because we support pathPrefix and port matching
+const mappings = (cfg.mappings || []).map(m => {
+  const frontendHost = (m.frontendHost || "").toLowerCase();
+  const frontendPort = m.frontendPort || null;
+  const pathPrefix = m.pathPrefix || null;    // optional: "/foo"
+
+  // ensure backend has scheme; assume http for localhost entries, https otherwise
+  let backend = m.backend || null;
+  if (backend && !/^https?:\/\//i.test(backend)) {
+    if (frontendHost === "localhost" || frontendHost.startsWith("127.")) {
+      backend = `http://${backend.replace(/^\/+/, "")}`;
+    } else {
+      backend = `https://${backend.replace(/^\/+/, "")}`;
+    }
+  }
+
+  return { frontendHost, frontendPort, pathPrefix, backend };
+});
+
+// Build allowed frontend origins from mappings (scheme + // + hostname)
+function buildAllowedFrontendHostsFromMappings() {
   const hosts = new Set();
-
-  // 1) Add explicit allowedHosts from config.frontend.allowedHosts if present
-  if (Array.isArray(config.frontend?.allowedHosts)) {
-    for (const h of config.frontend.allowedHosts) {
-      const n = normalizeFrontendHost(h);
-      if (n) hosts.add(n);
+  for (const m of mappings) {
+    if (!m.frontendHost) continue;
+    // assume https for non-localhost hosts; allow http for localhost
+    const scheme = (m.frontendHost === "localhost" || m.frontendHost.startsWith("127.")) ? "http" : "https";
+    // canonical origin w/o trailing slash
+    hosts.add(`${scheme}://${m.frontendHost}`);
+  }
+  // also include any explicit config.frontend.allowedHosts entries if present
+  if (Array.isArray(cfg.frontend?.allowedHosts)) {
+    for (const h of cfg.frontend.allowedHosts) {
+      try {
+        const u = new URL(h.includes("://") ? h : `https://${h}`);
+        hosts.add(`${u.protocol}//${u.hostname}`);
+      } catch {
+        // ignore bad entries
+      }
     }
   }
-
-  // 2) Add frontendHost values from proxy config mappings (assume HTTPS unless localhost)
-  if (Array.isArray(config.mappings)) {
-    for (const m of config.mappings) {
-      if (!m.frontendHost) continue;
-      // prefer https for real hosts; allow http for localhost/dev
-      const scheme = (m.frontendHost === "localhost" || m.frontendHost.startsWith("127.") ) ? "http" : "https";
-      const candidate = `${scheme}://${m.frontendHost}`.replace(/\/$/, "");
-      const n = normalizeFrontendHost(candidate);
-      if (n) hosts.add(n);
-    }
-  }
-
-  // 3) Add a configured default frontend URL if present
-  if (config.frontend?.default) {
-    const n = normalizeFrontendHost(config.frontend.default);
-    if (n) hosts.add(n);
-  }
-
   return Array.from(hosts);
 }
 
-const ALLOWED_FRONTEND_HOSTS = makeAllowedFrontendHosts();
-console.log("Allowed frontend hosts:", ALLOWED_FRONTEND_HOSTS);
+const ALLOWED_FRONTEND_HOSTS = buildAllowedFrontendHostsFromMappings();
+console.log("Derived ALLOWED_FRONTEND_HOSTS:", ALLOWED_FRONTEND_HOSTS);
 
 // Normalizer: accept either full URL or host-only; allow http for localhost
 function normalizeFrontendHost(val) {
