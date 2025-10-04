@@ -57,11 +57,103 @@ function setSessionCookie(res, sid, req) {
 
 	res.cookie(config.cookie.name, sid, opts);
 }
+// Build allowed frontend hosts from config mappings and explicit config
+function makeAllowedFrontendHosts() {
+  const hosts = new Set();
 
-r.get("/login", async (_req, res, next) => {
+  // 1) Add explicit allowedHosts from config.frontend.allowedHosts if present
+  if (Array.isArray(config.frontend?.allowedHosts)) {
+    for (const h of config.frontend.allowedHosts) {
+      const n = normalizeFrontendHost(h);
+      if (n) hosts.add(n);
+    }
+  }
+
+  // 2) Add frontendHost values from proxy config mappings (assume HTTPS unless localhost)
+  if (Array.isArray(config.mappings)) {
+    for (const m of config.mappings) {
+      if (!m.frontendHost) continue;
+      // prefer https for real hosts; allow http for localhost/dev
+      const scheme = (m.frontendHost === "localhost" || m.frontendHost.startsWith("127.") ) ? "http" : "https";
+      const candidate = `${scheme}://${m.frontendHost}`.replace(/\/$/, "");
+      const n = normalizeFrontendHost(candidate);
+      if (n) hosts.add(n);
+    }
+  }
+
+  // 3) Add a configured default frontend URL if present
+  if (config.frontend?.default) {
+    const n = normalizeFrontendHost(config.frontend.default);
+    if (n) hosts.add(n);
+  }
+
+  return Array.from(hosts);
+}
+
+const ALLOWED_FRONTEND_HOSTS = makeAllowedFrontendHosts();
+console.log("Allowed frontend hosts:", ALLOWED_FRONTEND_HOSTS);
+
+// Normalizer: accept either full URL or host-only; allow http for localhost
+function normalizeFrontendHost(val) {
+  if (!val || typeof val !== "string") return null;
+  let v = val.trim();
+  // If value looks like host-only (no scheme), assume https except localhost
+  if (!/^https?:\/\//i.test(v)) {
+    if (/^localhost(:\d+)?$/.test(v) || /^127\.\d+\.\d+\.\d+/.test(v)) {
+      v = `http://${v}`;
+    } else {
+      v = `https://${v}`;
+    }
+  }
+  // Remove any trailing slash
+  v = v.replace(/\/$/, "");
+  // Basic sanity check: scheme + hostname required
+  try {
+    const u = new URL(v);
+    // Only allow http or https
+    if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+    // Lowercase origin
+    return `${u.protocol}//${u.hostname}`;
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedFrontendHost(host) {
+  const normalized = normalizeFrontendHost(host);
+  if (!normalized) return false;
+  // Compare against allowlist origins (scheme + // + hostname)
+  return ALLOWED_FRONTEND_HOSTS.includes(normalized);
+}
+
+
+
+r.get("/login", async (req, res, next) => {
 	try {
+		// Accept frontend info from:
+		// 1) req.query.next (path only) and
+		// 2) req.get('origin') or req.get('referer') or req.query.frontend_host
+		const requestedNext = typeof req.query.next === 'string' && req.query.next.startsWith('/') ? req.query.next : '/';
+		// Prefer explicit param if frontend provided it
+		const rawFrontendHost = req.query.frontend_host || req.get('origin') || req.get('referer') || null;
+		const normalizedHost = normalizeFrontendHost(rawFrontendHost);
+
+		if (!isAllowedFrontendHost(normalizedHost)) {
+			// Fallback: if not allowed, either deny or use default frontend base from config
+			console.warn("Blocked login request from unallowed frontend host:", rawFrontendHost);
+			return res.status(400).send("Disallowed frontend host");
+		}
+
 		const { codeVerifier, codeChallenge, nonce } = startAuthFlow();
-		const state = await createStateRecord({ codeVerifier, nonce, createdAt: Date.now() });
+		// Save nextPath AND returnToHost in state record (server side)
+		const state = await createStateRecord({
+			codeVerifier,
+			nonce,
+			next: requestedNext,
+			returnToHost: normalizedHost,
+			createdAt: Date.now(),
+		});
+
 		const url = buildAuthorizeUrl({ state, nonce, codeChallenge });
 		res.redirect(url);
 	} catch (err) {
@@ -98,7 +190,19 @@ r.get(config.oidc.redirectPath.replace(/^\/auth/, ""), async (req, res, next) =>
 		console.log("SESSION CREATED:", { sid, userSnapshot: { email: userInfo.email, sub: userInfo.sub, name: userInfo.name } });
 
 		setSessionCookie(res, sid);
-		res.redirect("/");
+		const frontendBase = record?.returnToHost;
+		if (!frontendBase) {
+			console.error("No returnToHost in state record and no FRONTEND_URL configured. Falling back to / on BFF.");
+			return res.redirect("/");
+		}
+
+		// Ensure next is a safe path
+		const nextPath = (record?.next && typeof record.next === "string" && record.next.startsWith("/")) ? record.next : "/";
+
+		// Final safe redirect
+		const redirectTo = `${frontendBase}${nextPath}`;
+		console.log("Redirecting to frontend:", redirectTo);
+		res.redirect(redirectTo);
 	} catch (err) {
 		next(err);
 	}
