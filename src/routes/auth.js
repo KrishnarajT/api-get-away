@@ -164,7 +164,7 @@ r.get("/login", async (req, res, next) => {
 		// Prefer explicit param if frontend provided it
 		const rawFrontendHost = req.query.frontend_host || req.get('origin') || req.get('referer') || null;
 		const normalizedHost = normalizeFrontendHost(rawFrontendHost);
-
+		console.log("Login requestedNext:", requestedNext, "rawFrontendHost:", rawFrontendHost, "normalizedHost:", normalizedHost);
 		if (!isAllowedFrontendHost(normalizedHost)) {
 			// Fallback: if not allowed, either deny or use default frontend base from config
 			console.warn("Blocked login request from unallowed frontend host:", rawFrontendHost);
