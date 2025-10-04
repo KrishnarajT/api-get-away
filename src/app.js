@@ -54,9 +54,16 @@ app.use(
 // basic CORS only if you truly need cross-origin frontend during dev
 // In prod, keep same-origin and skip this.
 // Example shown but disabled by default.
-// import cors from 'cors';
-// app.use(cors({ origin: config.allowedOrigins, credentials: true }));
+import cors from 'cors';
 
+app.use(cors({
+  origin: "https://authentic-tracker.krishnarajthadesar.in", // frontend origin
+  credentials: true, // allows cookies to be sent/accepted
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+}));
+
+// ensure preflight responds quickly
+app.options("*", (req, res) => res.sendStatus(204));
 // routes
 app.use("/auth", authRoutes);
 app.use("/api", apiRoutes);
