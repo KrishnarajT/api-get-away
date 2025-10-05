@@ -29,14 +29,6 @@ app.use(
 app.use(pinoHttp({ logger }));
 if (process.env.NODE_ENV === "development") app.use(morgan("dev"));
 
-// ✅ Mount proxy BEFORE parsers so POST bodies are untouched
-app.use("/api", requireAuth, createApiProxy());
-
-// parsers — everything after proxy
-app.use(express.json({ limit: "100kb" }));
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
 // CORS
 app.use(cors({
 	origin: "https://authentic-tracker.krishnarajthadesar.in",
@@ -51,6 +43,14 @@ app.options(/.*/, (req, res) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.sendStatus(204);
 });
+
+// ✅ Mount proxy BEFORE parsers so POST bodies are untouched
+app.use("/api", requireAuth, createApiProxy());
+
+// parsers — everything after proxy
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // coarse rate limit on auth endpoints
 const authLimiter = rateLimit({
