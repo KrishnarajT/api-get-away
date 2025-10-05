@@ -80,6 +80,6 @@ r.use("/", async (req, res, next) => {
 
 // Proxy everything else to your resource server
 // keep requireAuth, csrfCheck if you need them; they run before the proxy
-r.use("/", requireAuth, csrfCheck, createApiProxy());
+r.use("/", requireAuth, createApiProxy());
 
 export default r;
