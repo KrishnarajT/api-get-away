@@ -4,6 +4,8 @@ import { refreshTokens } from "../services/oidc.js";
 
 export default async function requireAuth(req, res, next) {
 	try {
+		if (req.method === "OPTIONS") return next();
+
 		const sid = req.cookies?.[config.cookie.name];
 		const sess = await getSession(sid);
 		if (!sess?.access_token) return res.status(401).json({ error: "Unauthorized" });
