@@ -30,7 +30,7 @@ app.use(pinoHttp({ logger }));
 if (process.env.NODE_ENV === "development") app.use(morgan("dev"));
 
 // ✅ Mount proxy BEFORE parsers so POST bodies are untouched
-app.use("/api", requireAuth(), createApiProxy());
+app.use("/api", requireAuth, createApiProxy());
 
 // parsers — everything after proxy
 app.use(express.json({ limit: "100kb" }));
