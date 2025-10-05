@@ -13,7 +13,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
 import { createApiProxy } from "./services/proxy.js";  // ✅ import proxy directly
-import requireAuth from "../middleware/requireAuth.js";
+import requireAuth from "./middleware/requireAuth.js";
 const app = express();
 app.set("trust proxy", 1);
 
