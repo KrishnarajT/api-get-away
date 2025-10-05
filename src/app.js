@@ -44,6 +44,14 @@ app.use(cors({
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
 
+app.options("*", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "https://authentic-tracker.krishnarajthadesar.in");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.sendStatus(204);
+});
+
 // coarse rate limit on auth endpoints
 const authLimiter = rateLimit({
 	windowMs: 60_000,
