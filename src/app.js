@@ -46,12 +46,12 @@ app.options(/.*/, (req, res) => {
 });
 
 // ✅ Mount proxy BEFORE parsers so POST bodies are untouched
+app.use(cookieParser());
 app.use("/api", proxy_routes);
 
 // parsers — everything after proxy
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 
 // coarse rate limit on auth endpoints
 const authLimiter = rateLimit({
