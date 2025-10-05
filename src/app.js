@@ -9,6 +9,7 @@ import logger from "./utils/logger.js";
 import authRoutes from "./routes/auth.js";
 import apiRoutes from "./routes/api.js";
 import healthRoutes from "./routes/health.js";
+import proxy_routes from "./routes/proxy_routes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
@@ -45,7 +46,7 @@ app.options(/.*/, (req, res) => {
 });
 
 // ✅ Mount proxy BEFORE parsers so POST bodies are untouched
-app.use("/api", requireAuth, createApiProxy());
+app.use("/api", proxy_routes);
 
 // parsers — everything after proxy
 app.use(express.json({ limit: "100kb" }));
@@ -71,7 +72,6 @@ app.use(
 
 // routes
 app.use("/auth", authRoutes);
-// note: proxy already handles /api, so no need to re-mount apiRoutes here
 app.use("/whoami", apiRoutes);
 app.use("/healthz", healthRoutes);
 
