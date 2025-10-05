@@ -11,10 +11,10 @@ import apiRoutes from "./routes/api.js";
 import healthRoutes from "./routes/health.js";
 import path from "path";
 import { fileURLToPath } from "url";
-
+import cors from "cors";
+import { createApiProxy } from "./services/proxy.js";  // ✅ import proxy directly
+import { requireAuth } from "./middleware/requireAuth.js"; // import requireAuth middleware
 const app = express();
-
-// trust proxy for secure cookies behind reverse proxies
 app.set("trust proxy", 1);
 
 // security headers
@@ -29,10 +29,20 @@ app.use(
 app.use(pinoHttp({ logger }));
 if (process.env.NODE_ENV === "development") app.use(morgan("dev"));
 
-// parsers
+// ✅ Mount proxy BEFORE parsers so POST bodies are untouched
+app.use("/api", requireAuth(), createApiProxy());
+
+// parsers — everything after proxy
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// CORS
+app.use(cors({
+	origin: "https://authentic-tracker.krishnarajthadesar.in",
+	credentials: true,
+	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
 
 // coarse rate limit on auth endpoints
 const authLimiter = rateLimit({
@@ -41,7 +51,6 @@ const authLimiter = rateLimit({
 	standardHeaders: true,
 	legacyHeaders: false,
 });
-
 app.use("/auth/", authLimiter);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -51,29 +60,17 @@ app.use(
 		extensions: ["html"],
 	})
 );
-// basic CORS only if you truly need cross-origin frontend during dev
-// In prod, keep same-origin and skip this.
-// Example shown but disabled by default.
-import cors from 'cors';
 
-app.use(cors({
-  origin: "https://authentic-tracker.krishnarajthadesar.in", // frontend origin
-  credentials: true, // allows cookies to be sent/accepted
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-}));
-
-// ensure preflight responds quickly
-// app.options("*", (req, res) => res.sendStatus(204));
 // routes
 app.use("/auth", authRoutes);
-app.use("/api", apiRoutes);
+// note: proxy already handles /api, so no need to re-mount apiRoutes here
+app.use("/whoami", apiRoutes);
 app.use("/healthz", healthRoutes);
 
 // 404
 app.use((req, res) => res.status(404).json({ error: "Not Found" }));
 
 // error handler
-// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, _next) => {
 	req.log?.error({ err }, "Unhandled error");
 	res.status(err.status || 500).json({ error: "Internal Server Error" });

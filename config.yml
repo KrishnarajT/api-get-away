@@ -1,4 +1,4 @@
-defaultBackend: "https://authentic.krishnarajthadesar.in"   # fallback
+defaultBackend: "http://100.69.148.22:4070"   # fallback
 mappings:
   - frontendHost: "api-get-away.krishnarajthadesar.in"
     backend: "http://100.69.148.22:7001"
