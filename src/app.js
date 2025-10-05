@@ -44,7 +44,7 @@ app.use(cors({
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
 
-app.options("/api", (req, res) => {
+app.options("/api/*", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "https://authentic-tracker.krishnarajthadesar.in");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
